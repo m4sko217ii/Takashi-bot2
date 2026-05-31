@@ -237,20 +237,25 @@ client.on('messageCreate', async message => {
     const question = message.content.replace(`<@${client.user.id}>`, '').trim();
     if (!question) return message.reply('Oui ? Tu veux me poser une question ? 👀');
 
-    const typing = await message.channel.sendTyping();
+    await message.channel.sendTyping();
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'llama3-8b-8192',
           max_tokens: 500,
-          system: 'Tu es Takashi, un assistant Discord cool, décontracté et un peu anime. Tu réponds en français, de façon courte et sympa. Pas plus de 3-4 phrases.',
-          messages: [{ role: 'user', content: question }]
+          messages: [
+            { role: 'system', content: 'Tu es Takashi, un assistant Discord cool, décontracté et un peu anime. Tu réponds en français, de façon courte et sympa. Pas plus de 3-4 phrases.' },
+            { role: 'user', content: question }
+          ]
         })
       });
       const data = await response.json();
-      const reply = data.content?.[0]?.text || 'Je sais pas trop là... 🤔';
+      const reply = data.choices?.[0]?.message?.content || 'Je sais pas trop là... 🤔';
       return message.reply(reply.substring(0, 1900));
     } catch {
       return message.reply('Oups, je suis un peu dans les choux là 😅 Réessaie !');
@@ -912,4 +917,3 @@ process.on('uncaughtException', err => console.error('uncaughtException:', err))
 //  CONNEXION
 // ══════════════════════════════════════════════════════════
 client.login(process.env.DISCORD_TOKEN);
-
